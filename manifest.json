@@ -71,7 +71,7 @@
     "vueVersion" : "2",
     "h5" : {
         "router" : {
-            "base" : "/unpackage/dist/build/web/"
+            "base" : "/PhoneNumPrediction/unpackage/dist/build/web/"
         }
     }
 }
