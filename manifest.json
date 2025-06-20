@@ -71,7 +71,7 @@
     "vueVersion" : "2",
     "h5" : {
         "router" : {
-            "base" : "/phone/"
+            "base" : "/unpackage/dist/build/web/"
         }
     }
 }

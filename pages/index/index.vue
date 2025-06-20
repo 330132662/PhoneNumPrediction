@@ -1,5 +1,9 @@
 <template>
 	<view class="container">
+		<!-- 
+		 github pages  用 /unpackage/dist/build/web/  打包 
+		 生产环境 用 /phone/ 打包 
+		 -->
 		<!-- 头部区域 -->
 		<view class="header">
 			<view class="logo">
