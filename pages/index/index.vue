@@ -74,8 +74,12 @@
 				<!-- 提交按钮 -->
 				<view class="form-group submit-group">
 					<!-- :disabled="!isFormValid" -->
-					<button class="submit-btn" @click="submitForm">
+					<button class="submit-btn" @click="submitForm(0)" :disabled="!isFormValid">
 						查询号码信息
+					</button>
+					<view style="height: 1rpx;"></view>
+					<button class="export-btn" @click="submitForm(1)" :disabled="!isFormValid">
+						下载结果
 					</button>
 				</view>
 			</view>
@@ -89,27 +93,27 @@
 					</button>
 				</view>
 
-				<view class="result-content">
-					<view class="result-item">
-						<view class="item-label">归属地</view>
-						<view class="item-value">{{ provinceName }} · {{ cityName }}</view>
+				<view class="result-content" v-for="(item,index) in listData" :key="index">
+					<view class="result-item" @click="copyInfo(item)">
+						<view class="item-label">{{ item.phone}} </view>
+						<view class="item-value">{{ item.isp}}</view>
 					</view>
 
-					<view class="result-item">
+					<!-- <view class="result-item">
 						<view class="item-label">手机号码</view>
 						<view class="item-value">
-							<text>{{ phonePrefix }}</text>
+							<text></text>
 							<text class="masked">****</text>
 							<text>{{ phoneSuffix }}</text>
 						</view>
-					</view>
+					</view> 
 
 					<view class="result-item">
 						<view class="item-label">运营商</view>
 						<view class="item-value">{{ operator }}</view>
-					</view>
+					</view>-->
 
-					<view class="result-item">
+					<!-- <view class="result-item">
 						<view class="item-label">卡类型</view>
 						<view class="item-value">{{ cardType }}</view>
 					</view>
@@ -122,7 +126,7 @@
 					<view class="result-item">
 						<view class="item-label">邮编</view>
 						<view class="item-value">{{ postalCode }}</view>
-					</view>
+					</view> -->
 				</view>
 
 				<view class="result-footer">
@@ -133,8 +137,8 @@
 
 		<!-- 底部信息 -->
 		<view class="footer">
-			<view class="footer-text">© 2025 地区手机号查询服务</view>
-			<view class="footer-links">
+			<view class="footer-text" @click="navi2my">© 2025 地区手机号查询服务</view>
+			<view class="footer-links" @click="navi2my">
 				<text class="footer-link">隐私政策</text>
 				<text class="footer-link">使用条款</text>
 				<text class="footer-link">联系我们</text>
@@ -147,6 +151,8 @@
 	export default {
 		data() {
 			return {
+				listData: [],
+				downloadUrl:"", // 表格导出地址 
 				// 省份数据
 				provinces: [],
 
@@ -162,8 +168,8 @@
 				// selectedCity: {},
 
 				// 手机号相关
-				phonePrefix: '',
-				phoneSuffix: '',
+				phonePrefix: '130',
+				phoneSuffix: '566',
 				phoneError: '',
 
 				// 查询结果相关
@@ -210,6 +216,39 @@
 		},
 
 		methods: {
+			// Web平台下载方法
+			downloadInWeb(blob, fileName) {
+				// 创建下载链接
+				const link = document.createElement('a');
+				// link.href = URL.createObjectURL(blob);
+				link.href = this.downloadUrl
+				link.download = fileName;
+				// 模拟点击下载
+				document.body.appendChild(link);
+				// console.log("下載地址", link);
+				/* uni.setClipboardData({
+					data: link,
+				}) */
+				
+				link.click();
+				// window.open(link, "_blank","popup=yes")
+				// 清理资源
+				setTimeout(() => {
+					document.body.removeChild(link);
+					URL.revokeObjectURL(link.href);
+				}, 0);
+			},
+			copyInfo(item) {
+				console.log(item);
+				uni.setClipboardData({
+					data: item.phone,
+				})
+			},
+			navi2my() {
+				/* uni.navigateTo({
+					url:"http://www.appppa.cn/",
+				}) */
+			},
 			/**
 			 * 默认获取全部省份 ；传入pid 获取地级市列表 ；无需获取三级城市列表
 			 */
@@ -224,9 +263,19 @@
 						// console.log(res.data);
 						if (that.provinceId > 0) {
 							that.cities = res.data.data;
+							//  给省和市  做默认选定 
+							that.selectedCity = that.cities[0];
+							that.cityName = that.cities[0]["shortname"];
+							that.formValid.province = true;
+
+
+
 						} else {
 							that.provinces = res.data.data;
 							console.log(that.provinces);
+
+							that.provinceId = that.provinces[0]["value"];
+							that.provinceName = that.provinces[0]["shortname"];
 						}
 
 						// this.text = 'request success';
@@ -234,28 +283,75 @@
 				})
 
 			},
-			reqInfo() {
+			reqInfo(isExport) {
 				var that = this;
 				uni.request({
 					url: that.host + "/api/demo/index",
 					data: {
 						"province": that.provinceName,
 						"city": that.cityName,
-						"start":that.phonePrefix,
-						"end":that.phoneSuffix,
+						"start": that.phonePrefix,
+						"end": that.phoneSuffix,
+						"is_export": isExport,
 					},
 					success: (res) => {
-						const code =  res.data.code ;
-						if(code == 1){
-						  uni.showToast({
-						  	title:"查询到了"
-						  })	
-						}else{
+						const code = res.data.code;
+						if (code == 1) {
+							uni.showToast({
+								title: "查询到了"
+							})
+							that.listData = res.data.data.list;
+							that.downloadUrl = res.data.data.download;
+						} else {
 							uni.showModal({
-								title:res.data.msg,
-								
+								title: res.data.msg,
 							})
 						}
+						// console.log();
+					}
+				})
+			},
+			reqExport() {
+				var that = this;
+				uni.request({
+					url: that.host + "/api/demo/index",
+					responseType: 'arraybuffer',
+					data: {
+						"province": that.provinceName,
+						"city": that.cityName,
+						"start": that.phonePrefix,
+						"end": that.phoneSuffix,
+						"is_export": 1,
+					},
+					success: (res) => {
+						/* console.log(res);
+						const code = res.data.code;
+						// 处理二进制数据为Blob
+						const blob = new Blob([res.data.data], {
+							type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+						}); */
+                        // console.log("1111111111",blob);
+						// 根据平台选择不同的下载方式
+						const p = uni.getSystemInfoSync().platform;
+						console.log("平台 ",p)
+						if (p === 'web' || p == "windows") {
+							// Web平台使用HTML5的下载方式
+							that.downloadInWeb(null, '信息表.xlsx');
+						} else {
+							// 小程序平台使用uni.saveFile
+							// this.downloadInApp(blob, '员工信息表.xlsx');
+						}
+						/* if (code == 1) {
+							uni.showToast({
+								title: "OK"
+							})
+
+
+						} else {
+							uni.showModal({
+								title: res.data.msg,
+							})
+						} */
 						// console.log();
 					}
 				})
@@ -280,6 +376,7 @@
 				this.provinceIndex = e.detail.value;
 				// this.selectedProvince = this.provinces[this.provinceIndex];
 				this.formValid.province = true;
+				this.formValid.city = true;
 				this.provinceId = this.provinces[this.provinceIndex]["value"];
 				this.provinceName = this.provinces[this.provinceIndex]["shortname"];
 
@@ -293,7 +390,7 @@
 				this.selectedCity = this.cities[this.cityIndex];
 				this.cityName = this.cities[this.cityIndex]["shortname"];
 				this.formValid.city = true;
-				console.log("城市  ", this.cityName );
+				console.log("城市  ", this.cityName);
 
 			},
 
@@ -342,11 +439,15 @@
 			},
 
 			// 提交表单
-			submitForm() {
+			submitForm(isExport) {
 				if (!this.isFormValid) {
 					// return;
 				}
-				this.reqInfo()
+				if (isExport) {
+					this.reqExport();
+				} else {
+					this.reqInfo(isExport);
+				}
 				// 模拟API请求
 				// 实际项目中应该发送请求到后端API
 
@@ -408,6 +509,10 @@
 			// 滚动到结果区域
 			scrollToResult() {
 				uni.createSelectorQuery().select('.result-card').boundingClientRect(function(rect) {
+					if(rect == null){
+						console.warn("rect  nulllllllllllll")
+						return ;
+					}
 					uni.pageScrollTo({
 						scrollTop: rect.top - 100,
 						duration: 300
@@ -566,6 +671,18 @@
 		box-shadow: 0 8rpx 20rpx rgba(64, 158, 255, 0.3);
 	}
 
+	.export-btn {
+		width: 100%;
+		height: 96rpx;
+		line-height: 96rpx;
+		background: #1F7445;
+		color: #fff;
+		border-radius: 48rpx;
+		font-size: 32rpx;
+		font-weight: 500;
+		box-shadow: 0 8rpx 20rpx rgba(64, 158, 255, 0.3);
+	}
+
 	.submit-btn[disabled] {
 		opacity: 0.5;
 		box-shadow: none;
@@ -614,7 +731,7 @@
 
 	.result-item {
 		display: flex;
-		padding: 20rpx 0;
+		padding: 2rpx 0;
 		border-bottom: 1rpx solid #f5f5f5;
 	}
 
