@@ -156,7 +156,7 @@
 		data() {
 			return {
 				listData: [],
-				downloadUrl:"", // 表格导出地址 
+				downloadUrl: "", // 表格导出地址 
 				// 省份数据
 				provinces: [],
 
@@ -172,8 +172,8 @@
 				// selectedCity: {},
 
 				// 手机号相关
-				phonePrefix: '130',
-				phoneSuffix: '566',
+				phonePrefix: '',
+				phoneSuffix: '',
 				phoneError: '',
 
 				// 查询结果相关
@@ -233,7 +233,7 @@
 				/* uni.setClipboardData({
 					data: link,
 				}) */
-				
+
 				link.click();
 				// window.open(link, "_blank","popup=yes")
 				// 清理资源
@@ -334,10 +334,10 @@
 						const blob = new Blob([res.data.data], {
 							type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 						}); */
-                        // console.log("1111111111",blob);
+						// console.log("1111111111",blob);
 						// 根据平台选择不同的下载方式
 						const p = uni.getSystemInfoSync().platform;
-						console.log("平台 ",p)
+						console.log("平台 ", p)
 						if (p === 'web' || p == "windows") {
 							// Web平台使用HTML5的下载方式
 							that.downloadInWeb(null, '信息表.xlsx');
@@ -513,9 +513,9 @@
 			// 滚动到结果区域
 			scrollToResult() {
 				uni.createSelectorQuery().select('.result-card').boundingClientRect(function(rect) {
-					if(rect == null){
+					if (rect == null) {
 						console.warn("rect  nulllllllllllll")
-						return ;
+						return;
 					}
 					uni.pageScrollTo({
 						scrollTop: rect.top - 100,
